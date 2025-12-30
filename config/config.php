@@ -33,9 +33,39 @@ if (session_status() === PHP_SESSION_NONE) {
 define('PASSWORD_MIN_LENGTH', 8);
 define('CSRF_TOKEN_TIMEOUT', 3600);
 
-// External APIs
-define('GOOGLE_MAPS_API_KEY', 'AIzaSyDemoKey123'); // Replace with real key
-define('OPENWEATHER_API_KEY', 'demo_weather_key'); // Replace with real key
+// External APIs (All Free - No Credit Card Required)
+// Maps: Using OpenStreetMap + Leaflet (completely free, no API key needed)
+define('OPENSTREETMAP_TILE_URL', 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+define('OPENSTREETMAP_ATTRIBUTION', '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors');
+
+// Geocoding: Using Nominatim (free, no API key)
+define('NOMINATIM_API', 'https://nominatim.openstreetmap.org');
+
+// Weather: Using Open-Meteo (completely free, no API key needed)
+// Note: OpenWeather removed - requires credit card
+define('GROQ_API_KEY', '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'); // Free AI API - Get key from https://console.groq.com (no card needed)
+
+// Weather & Environmental APIs (All Free - No API Keys Required)
+define('OPEN_METEO_API', 'https://api.open-meteo.com/v1/forecast');
+define('OPEN_METEO_AIR_QUALITY_API', 'https://air-quality-api.open-meteo.com/v1/air-quality');
+define('NASA_EONET_API', 'https://eonet.gsfc.nasa.gov/api/v3/events');
+define('RAINVIEWER_API', 'https://api.rainviewer.com/public/weather-maps.json');
+define('NASA_GIBS_API', 'https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi');
+
+// Windy Embed URL (for satellite/weather maps)
+define('WINDY_EMBED_URL', 'https://embed.windy.com/embed2.html');
+
+// Groq AI API (Free tier - for AI recommendations)
+define('GROQ_API_URL', 'https://api.groq.com/openai/v1/chat/completions');
+define('GROQ_MODEL', 'llama-3.1-8b-instant');
+
+// Email Configuration (SMTP)
+define('SMTP_HOST', 'smtp.gmail.com');
+define('SMTP_PORT', 587);
+define('SMTP_USERNAME', 'bluedot.smartchashi@gmail.com'); // Replace with your Gmail
+define('SMTP_PASSWORD', 'jlqveszkzcvpukgy');     // Replace with Gmail App Password
+define('SMTP_FROM_NAME', 'Smart Chashi');
+define('SMTP_FROM_EMAIL', 'bluedot.smartchashi@gmail.com'); // Replace with your Gmail
 
 // Colors
 define('COLOR_PRIMARY', '#557A46');
@@ -202,4 +232,7 @@ if (!function_exists('verifyPassword')) {
 
 // Load language translations
 require_once __DIR__ . '/languages.php';
+
+// Load settings helper functions
+require_once __DIR__ . '/settings_helper.php';
 ?>
