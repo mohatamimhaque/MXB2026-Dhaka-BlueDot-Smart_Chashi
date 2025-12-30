@@ -1,68 +1,16 @@
 <?php
+include __DIR__ . '/../layouts/header.php';
 
 if (!isLoggedIn()) {
     redirect('login');
 }
 
-include __DIR__ . '/../layouts/header.php';
 
 $user = getCurrentUser();
 $db = new Database();
 
 // Get active tab
 $activeTab = $_GET['tab'] ?? 'posts';
-
-// Get search query
-$searchQuery = trim($_GET['search'] ?? '');
-
-// Get posts
-$posts = $db->resultSet("SELECT cp.*, u.first_name, u.last_name FROM community_posts cp LEFT JOIN users u ON cp.user_id = u.user_id ORDER BY cp.created_at DESC LIMIT 50");
-
-// Get nearby farmers
-$nearbyFarmers = [];
-if ($activeTab === 'farmers' && !empty($user['latitude']) && !empty($user['longitude'])) {
-    $nearbyFarmers = $db->resultSet("
-        SELECT u.user_id, u.first_name, u.last_name, u.location, u.latitude, u.longitude,
-               ROUND(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))), 2) as distance
-        FROM users u 
-        WHERE u.role = 'farmer' AND u.user_id != ? AND u.latitude IS NOT NULL AND u.longitude IS NOT NULL
-        HAVING distance <= 50
-        ORDER BY distance ASC
-        LIMIT 100
-    ", [$user['latitude'], $user['longitude'], $user['latitude'], $_SESSION['user_id']]);
-    
-    // Filter by search query (name or location)
-    if (!empty($searchQuery)) {
-        $nearbyFarmers = array_filter($nearbyFarmers, function($farmer) use ($searchQuery) {
-            $name = strtolower($farmer['first_name'] . ' ' . ($farmer['last_name'] ?? ''));
-            $location = strtolower($farmer['location'] ?? '');
-            $search = strtolower($searchQuery);
-            return strpos($name, $search) !== false || strpos($location, $search) !== false;
-        });
-    }
-}
-
-// Get officers
-$officers = [];
-if ($activeTab === 'officers') {
-    $officers = $db->resultSet("
-        SELECT u.user_id, u.first_name, u.last_name, u.location, u.latitude, u.longitude, u.phone
-        FROM users u 
-        WHERE u.role = 'officer'
-        ORDER BY u.first_name ASC
-        LIMIT 100
-    ");
-    
-    // Filter by search query (name or location)
-    if (!empty($searchQuery)) {
-        $officers = array_filter($officers, function($officer) use ($searchQuery) {
-            $name = strtolower($officer['first_name'] . ' ' . ($officer['last_name'] ?? ''));
-            $location = strtolower($officer['location'] ?? '');
-            $search = strtolower($searchQuery);
-            return strpos($name, $search) !== false || strpos($location, $search) !== false;
-        });
-    }
-}
 ?>
 
 <section class="hero">
@@ -72,265 +20,707 @@ if ($activeTab === 'officers') {
 
 <!-- Community Tabs Navigation -->
 <div class="community-tabs">
-    <a href="?tab=posts" class="tab-btn <?php echo $activeTab === 'posts' ? 'active' : ''; ?>">
+    <button class="tab-btn <?php echo $activeTab === 'posts' ? 'active' : ''; ?>" data-tab="posts">
         <span class="material-icons">forum</span>
         <span>Community Posts</span>
-    </a>
-    <a href="?tab=farmers" class="tab-btn <?php echo $activeTab === 'farmers' ? 'active' : ''; ?>">
+    </button>
+    <button class="tab-btn <?php echo $activeTab === 'farmers' ? 'active' : ''; ?>" data-tab="farmers">
         <span class="material-icons">agriculture</span>
         <span>Nearby Farmers</span>
-    </a>
-    <a href="?tab=officers" class="tab-btn <?php echo $activeTab === 'officers' ? 'active' : ''; ?>">
+    </button>
+    <button class="tab-btn <?php echo $activeTab === 'officers' ? 'active' : ''; ?>" data-tab="officers">
         <span class="material-icons">supervised_user_circle</span>
         <span>Officer Network</span>
-    </a>
+    </button>
+    <button class="tab-btn <?php echo $activeTab === 'bookmarks' ? 'active' : ''; ?>" data-tab="bookmarks">
+        <span class="material-icons">bookmarks</span>
+        <span>My Bookmarks</span>
+    </button>
 </div>
 
 <!-- Community Posts Tab -->
-<?php if ($activeTab === 'posts'): ?>
-<div class="community-grid">
-    <div class="community-form-section">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <span class="material-icons" style="vertical-align: middle;">post_add</span>
-                    <?php echo __('create_new_post'); ?>
-                </h3>
-            </div>
-
-            <form id="postForm" method="POST" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label for="title"><?php echo __('title'); ?> *</label>
-                    <input type="text" id="title" name="title" placeholder="<?php echo __('whats_on_mind'); ?>" required>
+<div class="tab-content" id="posts-tab" style="display: <?php echo $activeTab === 'posts' ? 'block' : 'none'; ?>;">
+    <div class="community-grid">
+        <div class="community-form-section">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <span class="material-icons" style="vertical-align: middle;">post_add</span>
+                        <?php echo __('create_new_post'); ?>
+                    </h3>
                 </div>
 
-                <div class="form-group">
-                    <label for="category"><?php echo __('category'); ?></label>
-                    <select id="category" name="category">
-                        <option>General Discussion</option>
-                        <option>Crop Problems</option>
-                        <option>Best Practices</option>
-                        <option>Market Updates</option>
-                        <option>Weather Discussion</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="content"><?php echo __('content'); ?> *</label>
-                    <textarea id="content" name="content" placeholder="<?php echo __('share_experience'); ?>" required></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="postPhoto">Add Photo (Optional)</label>
-                    <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 0.5rem;">JPG, PNG - Max 5MB</p>
-                    <input type="file" id="postPhoto" name="postPhoto" accept="image/*" style="cursor: pointer;">
-                    <small class="form-text">Adding a photo will help attract more engagement to your post</small>
-                </div>
-
-                <div class="form-group">
-                    <button type="submit" class="btn btn-block"><?php echo __('post'); ?></button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div class="community-stats-section">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <span class="material-icons" style="vertical-align: middle;">analytics</span>
-                    <?php echo __('community_stats'); ?>
-                </h3>
-            </div>
-
-            <div class="stats-list">
-                <p><span class="material-icons">people</span><strong><?php echo __('total_farmers'); ?>:</strong> 12,450</p>
-                <p><span class="material-icons">article</span><strong><?php echo __('posts_today'); ?>:</strong> 345</p>
-                <p><span class="material-icons">forum</span><strong><?php echo __('active_discussions'); ?>:</strong> 89</p>
-            </div>
-            <p class="popular-topics-title"><span class="material-icons">trending_up</span><strong><?php echo __('popular_topics'); ?>:</strong></p>
-            <ul class="popular-topics-list">
-                <li><span class="material-icons">chevron_right</span>Rice Diseases</li>
-                <li><span class="material-icons">chevron_right</span>Vegetable Pricing</li>
-                <li><span class="material-icons">chevron_right</span>Weather Impacts</li>
-                <li><span class="material-icons">chevron_right</span>Organic Farming</li>
-            </ul>
-        </div>
-    </div>
-</div>
-
-<h2 class="section-title">
-    <span class="material-icons" style="vertical-align: middle;">forum</span>
-    <?php echo __('recent_posts'); ?>
-</h2>
-<?php if ($posts): ?>
-    <div class="posts-container">
-        <?php foreach ($posts as $post): ?>
-        <div class="card post-card">
-            <div class="card-header post-header">
-                <div class="post-info">
-                    <h4 class="card-title"><?php echo htmlspecialchars($post['title']); ?></h4>
-                    <small class="post-meta">
-                        <span class="material-icons">person</span>
-                        by <?php echo htmlspecialchars($post['first_name'] . ' ' . ($post['last_name'] ?? '')); ?> 
-                        in <strong><?php echo htmlspecialchars($post['category']); ?></strong>
-                    </small>
-                </div>
-                <span class="badge"><?php echo date('M d', strtotime($post['created_at'])); ?></span>
-            </div>
-
-            <?php if (!empty($post['post_image'])): ?>
-                <div class="post-image-container">
-                    <img src="<?php echo htmlspecialchars($post['post_image']); ?>" alt="Post image" class="post-image">
-                </div>
-            <?php endif; ?>
-
-            <div class="card-content">
-                <p><?php echo htmlspecialchars(substr($post['content'], 0, 200)); ?>...</p>
-            </div>
-
-            <div class="card-footer post-actions">
-                <button class="btn-like btn btn-small" data-post-id="<?php echo $post['post_id']; ?>">
-                    <span class="material-icons">favorite</span> <?php echo $post['likes']; ?> Likes
-                </button>
-                <a href="#" class="btn btn-small"><span class="material-icons">reply</span> Reply</a>
-            </div>
-        </div>
-        <?php endforeach; ?>
-    </div>
-<?php else: ?>
-    <div class="notice notice-info">
-        <p>No posts yet. Be the first to share your farming experience!</p>
-    </div>
-<?php endif; ?>
-
-<?php elseif ($activeTab === 'farmers'): ?>
-<!-- Nearby Farmers Tab -->
-<h2 class="section-title">
-    <span class="material-icons" style="vertical-align: middle;">agriculture</span>
-    Nearby Farmers
-</h2>
-
-<!-- Search Form -->
-<div class="search-section">
-    <form method="GET" class="search-form">
-        <input type="hidden" name="tab" value="farmers">
-        <div class="search-input-group">
-            <span class="material-icons search-icon">search</span>
-            <input type="text" name="search" placeholder="Search by name or location..." value="<?php echo htmlspecialchars($searchQuery); ?>" class="search-input">
-            <button type="submit" class="btn btn-small" style="margin-left: 0.5rem;">
-                <span class="material-icons">search</span>
-            </button>
-            <?php if (!empty($searchQuery)): ?>
-                <a href="?tab=farmers" class="btn btn-small btn-secondary">Clear</a>
-            <?php endif; ?>
-        </div>
-    </form>
-</div>
-
-<?php if (!empty($user['latitude']) && !empty($user['longitude'])): ?>
-    <?php if (!empty($nearbyFarmers)): ?>
-        <div class="farmers-grid">
-            <?php foreach ($nearbyFarmers as $farmer): ?>
-            <div class="card farmer-card">
-                <div class="farmer-header">
-                    <div class="farmer-info">
-                        <h4 class="farmer-name"><?php echo htmlspecialchars($farmer['first_name'] . ' ' . ($farmer['last_name'] ?? '')); ?></h4>
-                        <p class="farmer-location">
-                            <span class="material-icons">location_on</span>
-                            <?php echo htmlspecialchars($farmer['location'] ?? 'Location not set'); ?>
-                        </p>
+                <form id="postForm" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="action" value="create_post">
+                    <div class="form-group">
+                        <label for="title"><?php echo __('title'); ?> *</label>
+                        <input type="text" id="title" name="title" placeholder="<?php echo __('whats_on_mind'); ?>" required>
                     </div>
-                    <span class="distance-badge"><?php echo $farmer['distance']; ?> km</span>
-                </div>
-                <div class="card-footer farmer-actions">
-                    <button class="btn btn-small">
-                        <span class="material-icons">message</span> Message
-                    </button>
-                    <button class="btn btn-small btn-secondary">
-                        <span class="material-icons">info</span> View Profile
-                    </button>
-                </div>
+
+                    <div class="form-group">
+                        <label for="category"><?php echo __('category'); ?></label>
+                        <select id="category" name="category">
+                            <option value="General Discussion">General Discussion</option>
+                            <option value="Crop Problems">Crop Problems</option>
+                            <option value="Best Practices">Best Practices</option>
+                            <option value="Market Updates">Market Updates</option>
+                            <option value="Weather Discussion">Weather Discussion</option>
+                            <option value="Pest Control">Pest Control</option>
+                            <option value="Fertilizer Tips">Fertilizer Tips</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="content"><?php echo __('content'); ?> *</label>
+                        <textarea id="content" name="content" placeholder="<?php echo __('share_experience'); ?>" required rows="4"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="postPhoto">Add Photo (Optional)</label>
+                        <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 0.5rem;">JPG, PNG - Max 5MB</p>
+                        <input type="file" id="postPhoto" name="postPhoto" accept="image/*" style="cursor: pointer;">
+                        <small class="form-text">Adding a photo will help attract more engagement to your post</small>
+                        <div id="imagePreview" style="margin-top: 10px; display: none;">
+                            <img id="previewImg" src="" alt="Preview" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
+                            <button type="button" onclick="clearImagePreview()" class="btn btn-small btn-secondary" style="margin-top: 5px;">Remove Image</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-block" id="submitPostBtn">
+                            <span class="material-icons">send</span> <?php echo __('post'); ?>
+                        </button>
+                    </div>
+                </form>
             </div>
-            <?php endforeach; ?>
         </div>
-    <?php else: ?>
-        <div class="notice notice-info">
-            <p>No nearby farmers found within 50 km. Expand your search or check back later!</p>
+
+        <div class="community-stats-section">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <span class="material-icons" style="vertical-align: middle;">analytics</span>
+                        <?php echo __('community_stats'); ?>
+                    </h3>
+                </div>
+
+                <div class="stats-list" id="communityStats">
+                    <p><span class="material-icons">people</span><strong><?php echo __('total_farmers'); ?>:</strong> <span id="totalFarmers" class="stat-value">Loading...</span></p>
+                    <p><span class="material-icons">article</span><strong><?php echo __('posts_today'); ?>:</strong> <span id="postsToday" class="stat-value">Loading...</span></p>
+                    <p><span class="material-icons">forum</span><strong><?php echo __('active_discussions'); ?>:</strong> <span id="activeDiscussions" class="stat-value">Loading...</span></p>
+                </div>
+                <p class="popular-topics-title"><span class="material-icons">trending_up</span><strong><?php echo __('popular_topics'); ?>:</strong></p>
+                <ul class="popular-topics-list" id="trendingTopics">
+                    <li><span class="material-icons">hourglass_empty</span>Loading topics...</li>
+                </ul>
+            </div>
         </div>
-    <?php endif; ?>
-<?php else: ?>
-    <div class="notice notice-warning">
-        <p><span class="material-icons">location_off</span> Please set your location in your profile to find nearby farmers.</p>
-        <a href="<?php echo $base_url; ?>profile" class="btn btn-small mt-2">
-            <span class="material-icons">edit</span> Update Profile
-        </a>
     </div>
-<?php endif; ?>
 
-<?php elseif ($activeTab === 'officers'): ?>
-<!-- Officer Network Tab -->
-<h2 class="section-title">
-    <span class="material-icons" style="vertical-align: middle;">supervised_user_circle</span>
-    Officer Network
-</h2>
-
-<!-- Search Form -->
-<div class="search-section">
-    <form method="GET" class="search-form">
-        <input type="hidden" name="tab" value="officers">
-        <div class="search-input-group">
-            <span class="material-icons search-icon">search</span>
-            <input type="text" name="search" placeholder="Search by name or location..." value="<?php echo htmlspecialchars($searchQuery); ?>" class="search-input">
-            <button type="submit" class="btn btn-small" style="margin-left: 0.5rem;">
+    <!-- Filter and Sort Controls -->
+    <div class="posts-controls" style="margin: 2rem 0; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+        <div class="filter-group" style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 250px;">
                 <span class="material-icons">search</span>
+                <input type="text" id="searchInput" class="form-control" placeholder="Search posts by title or content..." style="flex: 1;">
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <label for="categoryFilter"><span class="material-icons">filter_list</span> Category:</label>
+                <select id="categoryFilter" class="filter-select">
+                    <option value="all">All Categories</option>
+                    <option value="General Discussion">General Discussion</option>
+                    <option value="Crop Problems">Crop Problems</option>
+                    <option value="Best Practices">Best Practices</option>
+                    <option value="Market Updates">Market Updates</option>
+                    <option value="Weather Discussion">Weather Discussion</option>
+                    <option value="Pest Control">Pest Control</option>
+                    <option value="Fertilizer Tips">Fertilizer Tips</option>
+                </select>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <label for="sortBy"><span class="material-icons">sort</span> Sort By:</label>
+                <select id="sortBy" class="filter-select">
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="popular">Most Popular</option>
+                    <option value="most_discussed">Most Discussed</option>
+                </select>
+            </div>
+
+            <button id="refreshPosts" class="btn btn-small" style="margin-left: auto;">
+                <span class="material-icons">refresh</span> Refresh
             </button>
-            <?php if (!empty($searchQuery)): ?>
-                <a href="?tab=officers" class="btn btn-small btn-secondary">Clear</a>
-            <?php endif; ?>
         </div>
-    </form>
+    </div>
+
+    <h2 class="section-title">
+        <span class="material-icons" style="vertical-align: middle;">forum</span>
+        <?php echo __('recent_posts'); ?>
+    </h2>
+
+    <!-- Loading indicator -->
+    <div id="postsLoader" class="loader" style="display: none; text-align: center; padding: 20px;">
+        <span class="material-icons rotating" style="animation: spin 1s linear infinite;">refresh</span> Loading posts...
+    </div>
+
+    <!-- Posts container -->
+    <div class="posts-container" id="postsContainer">
+        <!-- Posts will be loaded dynamically -->
+    </div>
+
+    <!-- Load More Button -->
+    <div style="text-align: center; margin-top: 2rem;">
+        <div id="noMorePosts" style="display: none; padding: 20px; color: #666;">
+            <span class="material-icons">check_circle</span> You've reached the end
+        </div>
+    </div>
+    
+    <!-- Pagination Controls -->
+    <div id="paginationContainer" class="pagination-wrapper">
+        <div class="pagination">
+            <button id="firstPageBtn" class="pagination-btn" title="First Page">
+                <span class="material-icons">first_page</span>
+            </button>
+            <button id="prevPageBtn" class="pagination-btn" title="Previous Page">
+                <span class="material-icons">chevron_left</span>
+            </button>
+            <div id="pageNumbers" class="page-numbers">
+                <!-- Page numbers will be generated here -->
+            </div>
+            <button id="nextPageBtn" class="pagination-btn" title="Next Page">
+                <span class="material-icons">chevron_right</span>
+            </button>
+            <button id="lastPageBtn" class="pagination-btn" title="Last Page">
+                <span class="material-icons">last_page</span>
+            </button>
+        </div>
+        <div class="pagination-info">
+            <span id="pageInfo">Page 1 of 1</span>
+            <span class="pagination-separator">•</span>
+            <span id="resultsInfo">Showing 0 posts</span>
+        </div>
+    </div>
 </div>
 
-<?php if (!empty($officers)): ?>
-    <div class="officers-grid">
-        <?php foreach ($officers as $officer): ?>
-        <div class="card officer-card">
-            <div class="officer-header">
-                <div class="officer-info">
-                    <h4 class="officer-name"><?php echo htmlspecialchars($officer['first_name'] . ' ' . ($officer['last_name'] ?? '')); ?></h4>
-                    <p class="officer-title">
-                        <span class="material-icons">work</span>
-                        Agricultural Officer
-                    </p>
-                    <p class="officer-location">
-                        <span class="material-icons">location_on</span>
-                        <?php echo htmlspecialchars($officer['location'] ?? 'Location not specified'); ?>
-                    </p>
-                </div>
-            </div>
-            <div class="officer-contact">
-                <?php if (!empty($officer['phone'])): ?>
-                    <p><span class="material-icons">phone</span> <?php echo htmlspecialchars($officer['phone']); ?></p>
-                <?php endif; ?>
-            </div>
-            <div class="card-footer officer-actions">
-                <button class="btn btn-small">
-                    <span class="material-icons">mail</span> Contact
+<!-- Nearby Farmers Tab -->
+<div class="tab-content" id="farmers-tab" style="display: <?php echo $activeTab === 'farmers' ? 'block' : 'none'; ?>;">
+    <h2 class="section-title">
+        <span class="material-icons" style="vertical-align: middle;">agriculture</span>
+        Nearby Farmers
+    </h2>
+
+    <!-- Search Form -->
+    <div class="search-section" style="margin: 2rem 0;">
+        <form id="farmersSearchForm" class="search-form">
+            <div class="search-input-group" style="display: flex; gap: 0.5rem; align-items: center;">
+                <span class="material-icons search-icon">search</span>
+                <input type="text" id="farmersSearch" name="search" placeholder="Search by name or location..." class="search-input" style="flex: 1;">
+                <button type="submit" class="btn btn-small">
+                    <span class="material-icons">search</span>
                 </button>
-                <button class="btn btn-small btn-secondary">
-                    <span class="material-icons">info</span> View Profile
+                <button type="button" id="clearFarmersSearch" class="btn btn-small btn-secondary" style="display: none;">Clear</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Distance Filter -->
+    <div style="margin: 1rem 0; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+        <label for="distanceFilter"><span class="material-icons">straighten</span> Distance: <span id="distanceValue">50</span> km</label>
+        <input type="range" id="distanceFilter" min="10" max="100" value="50" step="10" style="width: 100%; margin-top: 0.5rem;">
+    </div>
+
+    <!-- Loading indicator -->
+    <div id="farmersLoader" class="loader" style="display: none; text-align: center; padding: 20px;">
+        <span class="material-icons rotating" style="animation: spin 1s linear infinite;">refresh</span> Loading farmers...
+    </div>
+
+    <!-- Farmers container -->
+    <div class="farmers-grid" id="farmersContainer">
+        <!-- Farmers will be loaded dynamically -->
+    </div>
+
+    <div id="noFarmersFound" style="display: none;" class="notice notice-info">
+        <p>No nearby farmers found. Try adjusting your search or distance filter.</p>
+    </div>
+</div>
+
+<!-- Officer Network Tab -->
+<div class="tab-content" id="officers-tab" style="display: <?php echo $activeTab === 'officers' ? 'block' : 'none'; ?>;">
+    <h2 class="section-title">
+        <span class="material-icons" style="vertical-align: middle;">supervised_user_circle</span>
+        Officer Network
+    </h2>
+
+    <!-- Search Form -->
+    <div class="search-section" style="margin: 2rem 0;">
+        <form id="officersSearchForm" class="search-form">
+            <div class="search-input-group" style="display: flex; gap: 0.5rem; align-items: center;">
+                <span class="material-icons search-icon">search</span>
+                <input type="text" id="officersSearch" name="search" placeholder="Search by name or location..." class="search-input" style="flex: 1;">
+                <button type="submit" class="btn btn-small">
+                    <span class="material-icons">search</span>
                 </button>
+                <button type="button" id="clearOfficersSearch" class="btn btn-small btn-secondary" style="display: none;">Clear</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Loading indicator -->
+    <div id="officersLoader" class="loader" style="display: none; text-align: center; padding: 20px;">
+        <span class="material-icons rotating" style="animation: spin 1s linear infinite;">refresh</span> Loading officers...
+    </div>
+
+    <!-- Officers container -->
+    <div class="officers-grid" id="officersContainer">
+        <!-- Officers will be loaded dynamically -->
+    </div>
+
+    <div id="noOfficersFound" style="display: none;" class="notice notice-info">
+        <p>No officers found. Try adjusting your search.</p>
+    </div>
+</div>
+
+<!-- Bookmarks Tab -->
+<div class="tab-content" id="bookmarks-tab" style="display: <?php echo $activeTab === 'bookmarks' ? 'block' : 'none'; ?>;">
+    <h2 class="section-title">
+        <span class="material-icons" style="vertical-align: middle;">bookmarks</span>
+        My Bookmarked Posts
+    </h2>
+
+    <!-- Loading indicator -->
+    <div id="bookmarksLoader" class="loader" style="display: none; text-align: center; padding: 20px;">
+        <span class="material-icons rotating" style="animation: spin 1s linear infinite;">refresh</span> Loading bookmarks...
+    </div>
+
+    <!-- Bookmarks container -->
+    <div class="posts-container" id="bookmarksContainer">
+        <!-- Bookmarks will be loaded dynamically -->
+    </div>
+
+    <div id="noBookmarks" style="display: none;" class="notice notice-info">
+        <p>You haven't bookmarked any posts yet. Browse community posts and bookmark interesting ones!</p>
+    </div>
+</div>
+
+<!-- Post Detail Modal -->
+<div id="postModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+        <span class="close-modal" onclick="closePostModal()">&times;</span>
+        <div id="postModalContent">
+            <!-- Post detail will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<!-- Edit Post Modal -->
+<div id="editPostModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 600px;">
+        <span class="close-modal" onclick="closeEditPostModal()">&times;</span>
+        <h2><span class="material-icons">edit</span> Edit Post</h2>
+        <form id="editPostForm">
+            <input type="hidden" id="editPostId" name="postId">
+            <div class="form-group">
+                <label for="editTitle">Title *</label>
+                <input type="text" id="editTitle" name="title" required>
+            </div>
+            <div class="form-group">
+                <label for="editCategory">Category</label>
+                <select id="editCategory" name="category">
+                    <option value="General Discussion">General Discussion</option>
+                    <option value="Crop Problems">Crop Problems</option>
+                    <option value="Best Practices">Best Practices</option>
+                    <option value="Market Updates">Market Updates</option>
+                    <option value="Weather Discussion">Weather Discussion</option>
+                    <option value="Pest Control">Pest Control</option>
+                    <option value="Fertilizer Tips">Fertilizer Tips</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="editContent">Content *</label>
+                <textarea id="editContent" name="content" required rows="6"></textarea>
+            </div>
+            <div class="form-group" style="display: flex; gap: 0.5rem;">
+                <button type="submit" class="btn">Save Changes</button>
+                <button type="button" class="btn btn-secondary" onclick="closeEditPostModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Share Modal -->
+<div id="shareModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 500px;">
+        <span class="close-modal" onclick="closeShareModal()">&times;</span>
+        <h2><span class="material-icons">share</span> Share Post</h2>
+        <div id="shareOptions" style="padding: 1rem 0;">
+            <p>Share this post on:</p>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem;">
+                <button class="btn btn-small" onclick="shareToWhatsApp()">
+                    <span class="material-icons">whatsapp</span> WhatsApp
+                </button>
+                <button class="btn btn-small" onclick="shareToFacebook()">
+                    <span class="material-icons">facebook</span> Facebook
+                </button>
+                <button class="btn btn-small" onclick="copyShareLink()">
+                    <span class="material-icons">link</span> Copy Link
+                </button>
+            </div>
+            <div style="margin-top: 1rem;">
+                <label>Share URL:</label>
+                <input type="text" id="shareUrl" readonly style="width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid #ddd;">
             </div>
         </div>
-        <?php endforeach; ?>
     </div>
-<?php else: ?>
-    <div class="notice notice-info">
-        <p>No officers found in the system.</p>
-    </div>
-<?php endif; ?>
+</div>
 
-<?php endif; ?>
+<style>
+.rotating {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.tab-content {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.filter-select {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+}
+
+.stat-value {
+    color: #4caf50;
+    font-weight: bold;
+}
+
+.post-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+.post-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+}
+
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s;
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: auto;
+    padding: 25px;
+    border: 1px solid #888;
+    border-radius: 12px;
+    width: 90%;
+    position: relative;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+}
+
+.close-modal {
+    color: #aaa;
+    position: absolute;
+    right: 15px;
+    top: 10px;
+    font-size: 32px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.close-modal:hover,
+.close-modal:focus {
+    color: #000;
+}
+
+.like-btn {
+    transition: all 0.3s;
+}
+
+.like-btn.liked .material-icons {
+    color: #e91e63;
+}
+
+.bookmark-btn.bookmarked .material-icons {
+    color: #ffc107;
+}
+
+.helpful-btn, .unhelpful-btn {
+    transition: all 0.3s;
+}
+
+.helpful-btn.voted .material-icons {
+    color: #4caf50;
+}
+
+.unhelpful-btn.voted .material-icons {
+    color: #f44336;
+}
+
+.post-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.post-actions button {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.comment-section {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+}
+
+.comment-item {
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.comment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.comment-author {
+    font-weight: bold;
+    color: #333;
+}
+
+.comment-date {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.comment-content {
+    margin: 0.5rem 0;
+    color: #444;
+}
+
+.comment-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    align-items: center;
+}
+
+.btn-danger {
+    background-color: #f44336;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #d32f2f;
+}
+
+.pagination-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.pagination-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    padding: 0.5rem;
+    border: 2px solid #e0e0e0;
+    background: #fff;
+    color: #333;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: #557A46;
+    color: white;
+    border-color: #557A46;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(85, 122, 70, 0.3);
+}
+
+.pagination-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: #f5f5f5;
+    border-color: #e0e0e0;
+}
+
+.page-numbers {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+}
+
+.page-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    padding: 0.5rem 0.75rem;
+    border: 2px solid #e0e0e0;
+    background: #fff;
+    color: #333;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.page-number:hover {
+    background: #f8f9fa;
+    border-color: #557A46;
+    transform: translateY(-1px);
+}
+
+.page-number.active {
+    background: linear-gradient(135deg, #557A46 0%, #8FBC46 100%);
+    color: white;
+    border-color: #557A46;
+    box-shadow: 0 4px 12px rgba(85, 122, 70, 0.4);
+    font-weight: 600;
+}
+
+.page-ellipsis {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    color: #999;
+    font-weight: bold;
+}
+
+.pagination-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.pagination-separator {
+    color: #ccc;
+}
+
+#pageInfo {
+    font-weight: 600;
+    color: #333;
+}
+
+#resultsInfo {
+    color: #666;
+}
+
+@media (max-width: 768px) {
+    .pagination {
+        gap: 0.25rem;
+    }
+    
+    .pagination-btn,
+    .page-number {
+        min-width: 36px;
+        height: 36px;
+        font-size: 0.85rem;
+    }
+    
+    .pagination-btn span {
+        font-size: 1.2rem;
+    }
+}
+
+.reply-form {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+.nested-comment {
+    margin-left: 2rem;
+    border-left: 2px solid #e0e0e0;
+    padding-left: 1rem;
+}
+
+.badge-pinned {
+    background: #ff9800;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.post-owner-badge {
+    background: #2196f3;
+    color: white;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    margin-left: 0.5rem;
+}
+</style>
+
+<script>
+// Pass base URL and user ID to JavaScript
+window.communityBaseUrl = '<?php echo $base_url; ?>';
+window.currentUserId = <?php echo $user['user_id']; ?>;
+</script>
+<script src="<?php echo $base_url; ?>public/js/community.js"></script>
 
 <?php include __DIR__ . '/../layouts/footer.php'; ?>
