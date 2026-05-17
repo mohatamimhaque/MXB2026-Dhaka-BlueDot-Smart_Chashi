@@ -1,0 +1,70 @@
+name: Lint & Syntax Check
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  php-syntax:
+    name: PHP Syntax Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: pdo_mysql, curl, mbstring, gd, json, fileinfo
+
+      - name: Check PHP syntax (all .php files)
+        run: find . -name "*.php" -not -path "./vendor/*" | xargs -I{} php -l {}
+
+      - name: Verify config.example.php is valid PHP
+        run: php -l config/config.example.php
+
+      - name: Ensure config.php is not committed
+        run: |
+          if [ -f "config/config.php" ]; then
+            echo "ERROR: config/config.php must not be committed (contains API keys)"
+            exit 1
+          fi
+          echo "config.php not found in repo — OK"
+
+  python-lint:
+    name: Python Lint Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Lint Python files
+        run: |
+          ruff check "Disease detection/plant_detection_api.py" \
+                     "Disease detection/app.py" \
+                     "Disease detection/backend/production_server.py" \
+                     "Disease detection/backend/crop_classifier.py" \
+                     "Disease detection/backend/disease_classifier.py" \
+            --select E,W,F --ignore E501,W503 || true
+
+  secrets-scan:
+    name: Secret Leak Detection
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan for hardcoded secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

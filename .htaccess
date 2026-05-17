@@ -1,0 +1,35 @@
+RewriteEngine On
+RewriteBase /smartchashi/
+
+ErrorDocument 404 /smartchashi/404.php
+
+# Agent chat with conversation ID clean URL: /agent/chat/CID
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^agent/chat/([a-zA-Z0-9_-]+)/?$ agent/chat.php?cid=$1 [QSA,L]
+
+# Agent chat clean URL: /agent/chat
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^agent/chat/?$ agent/chat.php [QSA,L]
+
+# Agent share clean URL: /agent/share/TOKEN
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^agent/share/([a-zA-Z0-9]+)/?$ agent/share.php?token=$1 [QSA,L]
+
+# Agent index (Cashibhai legacy route)
+RewriteRule ^cashibhai/?$ agent/index.php [QSA,L]
+
+# Shop
+RewriteRule ^shop/?$ shop/index.php [QSA,L]
+
+# Single-segment pages → index.php?page=xxx
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([a-zA-Z0-9_-]+)/?$ index.php?page=$1 [QSA,L]
+
+# Two-segment pages → index.php?page=xxx&id=yyy
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([a-zA-Z0-9_-]+)/([a-zA-Z0-9_-]+)/?$ index.php?page=$1&id=$2 [QSA,L]

@@ -1,0 +1,96 @@
+name: Bug Report
+description: Report a broken or unexpected behaviour
+labels: ["bug", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please fill in as much detail as you can.
+
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: One-sentence description of what is broken.
+      placeholder: "e.g. Disease detection returns 500 error when uploading a PNG"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: Module
+      description: Which part of Smart Chashi is affected?
+      options:
+        - AI Agent (Chashi Bhai)
+        - Disease Detection
+        - Marketplace / Shop
+        - Weather
+        - Community
+        - Learning Hub
+        - Admin Panel
+        - Authentication / Registration
+        - Alerts / Notifications
+        - Reports
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Exact steps to trigger the bug.
+      placeholder: |
+        1. Go to /disease
+        2. Upload a .png file (> 2 MB)
+        3. Click Analyze
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behaviour
+      placeholder: "Disease analysis result should appear"
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behaviour
+      placeholder: "HTTP 500 / blank page / wrong result"
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Fill in your local setup.
+      value: |
+        - PHP version:
+        - MariaDB version:
+        - XAMPP version:
+        - Browser:
+        - OS:
+        - Python version (if ML service involved):
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs (if any)
+      description: Paste relevant lines from `error.log`, browser console, or Python terminal.
+      render: text
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional Notes
+      description: Screenshots, workarounds, related issues, anything else.

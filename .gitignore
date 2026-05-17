@@ -1,0 +1,110 @@
+# ================================================================
+#  Smart Chashi — .gitignore
+# ================================================================
+
+# ── Credentials & Config ────────────────────────────────────────
+# NEVER commit real API keys or database passwords
+.env
+.env.*
+!.env.example
+
+.env
+Database/*.sql 
+# ── PHP Runtime ─────────────────────────────────────────────────
+error.log
+*.log
+php_errors.log
+
+# ── User-Uploaded Content ────────────────────────────────────────
+# Keep directory structure (.gitkeep files) but not uploaded files
+
+
+# ── Generated Reports ────────────────────────────────────────────
+reports/*
+!reports/.gitkeep
+
+# ── Python — Virtual Environment ─────────────────────────────────
+Disease detection/venv/
+venv/
+.venv/
+env/
+
+# ── Python — Cache & Compiled ────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ── Python — Jupyter Notebooks Output ────────────────────────────
+# Keep .ipynb files (training notebooks) but strip output
+# If you want to strip output: use nbstripout
+# .ipynb_checkpoints/
+
+# ── ML Model Weights (large binary files) ────────────────────────
+# These are 18–327 MB — use Git LFS or host separately
+Disease detection/backend/models/*.pth
+Disease detection/backend/models/*.h5
+Disease detection/backend/models/*.pb
+Disease detection/backend/models/*.onnx
+Disease detection/simple-plant-detection/model.safetensors
+Disease detection/simple-plant-detection/onnx/model.onnx
+Disease detection/simple-plant-detection/training_args.bin
+
+# Keep config/metadata (small text files — needed to load model)
+!Disease detection/simple-plant-detection/config.json
+!Disease detection/simple-plant-detection/preprocessor_config.json
+!Disease detection/backend/models/class_names.json
+!Disease detection/backend/models/class_names_merged.json
+
+# ── Disease Detection — Uploaded Images ──────────────────────────
+Disease detection/static/uploads/*
+!Disease detection/static/uploads/.gitkeep
+Disease detection/static/uploads/disease_images/*
+!Disease detection/static/uploads/disease_images/.gitkeep
+
+# ── Claude Code Session ──────────────────────────────────────────
+.claude/
+
+# ── IDE & Editors ────────────────────────────────────────────────
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.swp
+*.swo
+*~
+
+# ── Operating System ─────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ── Node (if any tooling is added later) ─────────────────────────
+node_modules/
+npm-debug.log*
+yarn-error.log
+
+# ── Composer (if PHP packages are added later) ───────────────────
+vendor/
+composer.lock
+
+# ── Temporary / Misc ─────────────────────────────────────────────
+*.tmp
+*.temp
+*.bak
+*.backup
+*.orig
+tmp/
+temp/

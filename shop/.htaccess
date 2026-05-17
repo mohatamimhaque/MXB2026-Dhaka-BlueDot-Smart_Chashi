@@ -1,0 +1,14 @@
+Options -Indexes
+RewriteEngine On
+RewriteBase /smartchashi/shop/
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Clean URLs for shop pages
+RewriteRule ^messages/([0-9]+)/?$    pages/messages.php?chat=$1   [QSA,L]
+RewriteRule ^messages/?$             pages/messages.php            [QSA,L]
+RewriteRule ^product/([0-9]+)/?$     pages/product-detail.php?id=$1 [QSA,L]
+RewriteRule ^products/?$             pages/products.php            [QSA,L]
+RewriteRule ^cart/?$                 pages/cart.php                [QSA,L]
+RewriteRule ^my-orders/?$            pages/my-orders.php           [QSA,L]

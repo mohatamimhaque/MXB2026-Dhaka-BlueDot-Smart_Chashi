@@ -1,0 +1,572 @@
+/* ============================================
+   PAGES TABLET CSS - TABLET-SPECIFIC STYLES
+   Smart Chashi - AI Smart Farming Platform
+   This file is loaded ONLY on tablet devices via JS detection
+   ============================================ */
+
+/* ===== TABLET CORE STYLES ===== */
+html {
+    font-size: 15px;
+}
+
+.container {
+    padding: 0 1.25rem;
+    max-width: 768px;
+}
+
+main {
+    padding-top: 0.75rem;
+    padding-bottom: 1.5rem;
+}
+
+/* ===== TABLET NAVBAR ===== */
+.navbar {
+    height: 60px;
+}
+
+.navbar-brand .brand-icon img {
+    width: 38px;
+    height: 38px;
+}
+
+.navbar-brand .brand-text {
+    font-size: 1.25rem;
+}
+
+.navbar-nav {
+    gap: 0.25rem;
+}
+
+.navbar-nav .nav-link {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.85rem;
+}
+
+.navbar-nav .nav-link .nav-icon {
+    font-size: 1.15rem;
+}
+
+/* ===== TABLET HERO ===== */
+.hero-modern {
+    padding: 3rem 1.5rem;
+    margin-bottom: 2rem;
+    border-radius: 16px;
+    min-height: 500px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.hero-content {
+    max-width: 100%;
+    width: 100%;
+    padding: 0 1.5rem !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.hero-badge {
+    font-size: 0.85rem !important;
+    padding: 0.6rem 1.25rem !important;
+}
+
+.hero-title {
+    font-size: 3rem !important;
+    justify-content: center;
+    text-align: center;
+}
+
+.hero-tagline {
+    font-size: 1.1rem !important;
+    justify-content: center;
+    text-align: center;
+}
+
+.hero-description {
+    font-size: 1.05rem !important;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+}
+
+/* Tablet Hero Stats */
+/* ===== TABLET HERO SECTION ===== */
+.hero-title {
+    font-size: 3rem !important;
+}
+
+.hero-tagline {
+    font-size: 1.1rem !important;
+}
+
+.hero-description {
+    font-size: 1.05rem !important;
+}
+
+.hero-badge {
+    font-size: 0.85rem !important;
+    padding: 0.6rem 1.25rem !important;
+}
+
+.hero-stats-modern {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.hero-stats-modern .stat-card-modern {
+    padding: 1.5rem 1rem;
+    text-align: center;
+}
+
+.stat-icon-wrap {
+    width: 60px !important;
+    height: 60px !important;
+}
+
+.stat-number {
+    font-size: 2rem !important;
+    text-align: center;
+}
+
+.stat-label {
+    font-size: 0.85rem !important;
+    text-align: center;
+}
+    font-size: 0.75rem;
+    text-align: center;
+}
+
+/* Tablet Hero Buttons */
+.hero-buttons {
+    flex-direction: row;
+    justify-content: center;
+    gap: 1rem;
+    max-width: 700px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.btn-hero {
+    flex: 1;
+    min-width: 180px;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    justify-content: center;
+}
+
+/* ===== TABLET SECTIONS ===== */
+.section-header {
+    margin-bottom: 1.75rem;
+}
+
+.section-title-modern {
+    font-size: 1.4rem !important;
+}
+
+.section-subtitle {
+    font-size: 0.9rem;
+}
+
+/* ===== TABLET FEATURES GRID ===== */
+.features-section {
+    margin-bottom: 2rem;
+}
+
+.features-grid-modern {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.feature-card-modern {
+    padding: 1.25rem;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.feature-icon-modern {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 0.85rem auto;
+}
+
+.feature-card-modern h3 {
+    font-size: 1rem;
+    text-align: center;
+}
+
+.feature-card-modern p {
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+.feature-tag {
+    font-size: 0.7rem;
+}
+
+/* ===== TABLET IMPACT SECTION ===== */
+.impact-section {
+    padding: 1.5rem;
+    margin-bottom: 1.75rem;
+    border-radius: 14px;
+}
+
+.impact-title {
+    font-size: 1.3rem;
+}
+
+.impact-stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.85rem;
+}
+
+.impact-stat-card {
+    padding: 0.85rem;
+}
+
+.impact-stat-number {
+    font-size: 1.3rem;
+}
+
+.impact-stat-label {
+    font-size: 0.75rem;
+}
+
+/* ===== TABLET WHY CHOOSE SECTION ===== */
+.benefits-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.85rem;
+}
+
+.benefit-card {
+    padding: 1rem;
+}
+
+.benefit-icon {
+    width: 48px;
+    height: 48px;
+}
+
+.benefit-card h4 {
+    font-size: 0.85rem;
+}
+
+.benefit-card p {
+    font-size: 0.75rem;
+}
+
+/* ===== TABLET TESTIMONIALS ===== */
+.testimonial-card {
+    padding: 1.25rem;
+}
+
+.testimonial-avatar {
+    width: 44px;
+    height: 44px;
+}
+
+.testimonial-title {
+    font-size: 1.05rem;
+}
+
+.testimonial-content {
+    font-size: 0.9rem;
+}
+
+/* ===== TABLET CTA ===== */
+.cta-section {
+    padding: 1.75rem 1.5rem;
+    border-radius: 14px;
+}
+
+.cta-content h2 {
+    font-size: 1.4rem;
+}
+
+.cta-content p {
+    font-size: 0.95rem;
+}
+
+.cta-buttons {
+    flex-direction: row;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.btn-cta {
+    padding: 0.85rem 1.75rem;
+}
+
+/* ===== TABLET STATS GRID ===== */
+.stats-grid-modern {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.stat-card-modern {
+    padding: 1.25rem;
+}
+
+.stat-card-modern .stat-number-modern {
+    font-size: 1.75rem;
+}
+
+/* ===== TABLET CARDS ===== */
+.card-modern {
+    border-radius: 12px;
+}
+
+.card-header-modern {
+    padding: 1rem 1.25rem;
+}
+
+.card-title-modern {
+    font-size: 1.05rem;
+}
+
+.card-body-modern {
+    padding: 1.25rem;
+}
+
+/* ===== TABLET DASHBOARD GRID ===== */
+.dashboard-grid-modern {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+/* ===== TABLET ACTIONS GRID ===== */
+.actions-grid-modern {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.85rem;
+}
+
+.action-card-modern {
+    padding: 1.25rem;
+}
+
+/* ===== TABLET INSIGHTS ===== */
+.insights-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+}
+
+.insight-value {
+    font-size: 1.35rem;
+}
+
+/* ===== TABLET FORMS ===== */
+.form-control,
+.form-select {
+    font-size: 15px;
+    padding: 0.75rem;
+}
+
+/* ===== TABLET BUTTONS ===== */
+.btn-modern {
+    padding: 0.7rem 1.25rem;
+    font-size: 0.9rem;
+}
+
+/* ===== TABLET FAB ===== */
+.fab-container {
+    bottom: 24px;
+    right: 20px;
+}
+
+.fab-main {
+    width: 54px;
+    height: 54px;
+}
+
+/* ===== TABLET MODALS ===== */
+.modal-content {
+    width: 85%;
+    max-width: 550px;
+    border-radius: 14px;
+}
+
+/* ===== TABLET TABLES ===== */
+table {
+    font-size: 0.9rem;
+}
+
+table th,
+table td {
+    padding: 0.85rem 0.75rem;
+}
+
+/* ===== TABLET LIVE STATUS ===== */
+.live-status-bar {
+    padding: 0.75rem 1.25rem;
+}
+
+.status-item {
+    font-size: 0.85rem;
+}
+
+/* ===== TABLET SECTION TITLE ===== */
+.section-title-modern .title-icon {
+    width: 44px;
+    height: 44px;
+}
+
+.section-title-modern .title-text span {
+    font-size: 1.15rem;
+}
+
+.section-title-modern .title-text small {
+    font-size: 0.8rem;
+}
+
+/* ===== TABLET UTILITIES ===== */
+.hide-on-tablet {
+    display: none !important;
+}
+
+.show-on-tablet {
+    display: block !important;
+}
+
+.full-width-tablet {
+    width: 100% !important;
+}
+
+/* ===== TABLET LANDSCAPE SPECIFIC ===== */
+@media (orientation: landscape) {
+    .hero-modern {
+        flex-direction: row;
+        text-align: left;
+    }
+
+    .hero-content {
+        flex: 1;
+    }
+
+    .hero-title {
+        justify-content: flex-start;
+    }
+
+    .hero-tagline {
+        justify-content: flex-start;
+    }
+
+    .hero-description {
+        margin-left: 0;
+    }
+
+    .hero-stats-modern {
+        justify-content: flex-start;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+        max-width: 900px;
+    }
+    
+    .stat-card-modern {
+        padding: 1.5rem 1.25rem;
+    }
+    
+    .stat-icon-wrap {
+        width: 70px;
+        height: 70px;
+        border-radius: 18px;
+    }
+    
+    .stat-icon-wrap .material-icons {
+        font-size: 2rem;
+    }
+    
+    .stat-number {
+        font-size: 2.25rem;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+    }
+
+    .hero-buttons {
+        justify-content: flex-start;
+    }
+
+    .hero-illustration {
+        display: block;
+        width: 200px;
+        height: 200px;
+    }
+
+    .dashboard-grid-modern {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .impact-stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+/* ===== FOOTER CENTERING FOR TABLET ===== */
+.footer {
+    text-align: center !important;
+    padding: 1rem 0 0.5rem !important;
+}
+
+.footer-content {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 1.5rem !important;
+}
+
+.footer-section {
+    text-align: center !important;
+}
+
+.footer-section h4 {
+    text-align: center !important;
+    font-size: 0.9rem !important;
+    margin-bottom: 0.4rem !important;
+}
+
+.footer-section p {
+    text-align: center !important;
+    font-size: 0.75rem !important;
+}
+
+.footer-section ul {
+    text-align: center !important;
+    list-style: none !important;
+    padding: 0 !important;
+}
+
+/* Keep 2-column grid for quick links */
+.footer-links-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.3rem !important;
+    max-width: 280px !important;
+    margin: 0 auto !important;
+}
+
+.footer-links-grid li {
+    text-align: center !important;
+}
+
+.social-links {
+    display: flex !important;
+    justify-content: center !important;
+    gap: 0.4rem !important;
+}
+
+.footer-bottom {
+    text-align: center !important;
+    font-size: 0.7rem !important;
+}
+
+.footer-bottom p {
+    text-align: center !important;
+}
+}

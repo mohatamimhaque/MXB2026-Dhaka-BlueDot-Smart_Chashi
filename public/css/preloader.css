@@ -1,0 +1,294 @@
+/* ============================================
+   PRELOADER STYLES - Green Theme
+   Smart Chashi - AI Smart Farming Platform
+   ============================================ */
+
+.preloader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #557a46 0%, #3d5a32 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+.preloader.fade-out {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.7s ease-out, visibility 0.7s;
+}
+
+.preloader-content {
+    text-align: center;
+    position: relative;
+}
+
+/* Logo Animation */
+.preloader-logo {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 2rem;
+    position: relative;
+    animation: logoFloat 2s ease-in-out infinite;
+}
+
+.preloader-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.3));
+    animation: logoPulse 2s ease-in-out infinite;
+}
+
+@keyframes logoFloat {
+
+    0%,
+    100% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-15px);
+    }
+}
+
+@keyframes logoPulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+/* Spinning Leaves Animation */
+.preloader-spinner {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1.5rem;
+}
+
+.leaf {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    background: linear-gradient(135deg, #8bc34a 0%, #689f38 100%);
+    border-radius: 0 100% 0 100%;
+    top: 50%;
+    left: 50%;
+    transform-origin: 0 0;
+    animation: leafSpin 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    box-shadow: 0 5px 15px rgba(139, 195, 74, 0.4);
+}
+
+.leaf-1 {
+    animation-delay: 0s;
+}
+
+.leaf-2 {
+    animation-delay: 0.5s;
+}
+
+.leaf-3 {
+    animation-delay: 1s;
+}
+
+@keyframes leafSpin {
+    0% {
+        transform: rotate(0deg) translateX(35px) rotate(0deg);
+        opacity: 0.3;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        transform: rotate(360deg) translateX(35px) rotate(-360deg);
+        opacity: 0.3;
+    }
+}
+
+/* Text Styling */
+.preloader-text {
+    color: white;
+    font-size: 2rem;
+    font-weight: 800;
+    font-family: 'Inter', sans-serif;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    animation: textGlow 2s ease-in-out infinite;
+}
+
+.preloader-subtext {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 2rem;
+    animation: dotPulse 1.5s infinite;
+}
+
+@keyframes textGlow {
+
+    0%,
+    100% {
+        text-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    50% {
+        text-shadow: 0 4px 25px rgba(255, 255, 255, 0.5);
+    }
+}
+
+@keyframes dotPulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Progress Bar */
+.progress-bar {
+    width: 250px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 0 auto;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.progress-fill {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, #8bc34a 0%, #aed581 50%, #8bc34a 100%);
+    background-size: 200% 100%;
+    animation: progressShimmer 1.5s ease-in-out infinite;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(139, 195, 74, 0.6);
+    transition: width 0.3s ease;
+}
+
+@keyframes progressFill {
+    0% {
+        width: 0%;
+    }
+
+    100% {
+        width: 100%;
+    }
+}
+
+@keyframes progressShimmer {
+    0% {
+        background-position: 0% 0%;
+    }
+
+    100% {
+        background-position: 200% 0%;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .preloader-logo {
+        width: 90px;
+        height: 90px;
+        margin-bottom: 1.5rem;
+    }
+
+    .preloader-spinner {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 1rem;
+    }
+
+    .leaf {
+        width: 24px;
+        height: 24px;
+    }
+
+    .preloader-text {
+        font-size: 1.5rem;
+    }
+
+    .preloader-subtext {
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .progress-bar {
+        width: 200px;
+    }
+}
+
+@media (max-width: 480px) {
+    .preloader-logo {
+        width: 70px;
+        height: 70px;
+        margin-bottom: 1rem;
+    }
+
+    .preloader-spinner {
+        width: 50px;
+        height: 50px;
+    }
+
+    .leaf {
+        width: 20px;
+        height: 20px;
+    }
+
+    .preloader-text {
+        font-size: 1.25rem;
+    }
+
+    .preloader-subtext {
+        font-size: 0.85rem;
+    }
+
+    .progress-bar {
+        width: 180px;
+    }
+}
+
+/* Particle Background Effect */
+.preloader::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image:
+        radial-gradient(circle at 20% 30%, rgba(139, 195, 74, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(139, 195, 74, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+    animation: particleMove 10s ease-in-out infinite;
+}
+
+@keyframes particleMove {
+
+    0%,
+    100% {
+        transform: translateY(0) scale(1);
+    }
+
+    50% {
+        transform: translateY(-20px) scale(1.1);
+    }
+}

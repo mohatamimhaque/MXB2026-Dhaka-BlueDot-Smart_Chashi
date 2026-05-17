@@ -1,0 +1,79 @@
+name: Feature Request
+description: Suggest a new feature or improvement
+labels: ["enhancement"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve Smart Chashi! Please describe your idea clearly.
+
+  - type: input
+    id: summary
+    attributes:
+      label: Feature Summary
+      description: One-sentence description of what you want.
+      placeholder: "e.g. Add SMS alert when disease is detected with high severity"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: Module / Area
+      options:
+        - AI Agent (Chashi Bhai)
+        - Disease Detection
+        - Marketplace / Shop
+        - Weather
+        - Community
+        - Learning Hub
+        - Admin Panel
+        - Authentication
+        - Alerts / Notifications
+        - Reports
+        - New Module
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / Motivation
+      description: What problem does this solve? What is currently missing?
+      placeholder: "Currently farmers only see disease alerts inside the app..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the feature in detail. Include UI changes, new endpoints, or DB changes if known.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any other approaches you thought about?
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority (your view)
+      options:
+        - Nice to have
+        - Should have
+        - Must have
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional Notes
+      description: Mockups, references, related issues, etc.

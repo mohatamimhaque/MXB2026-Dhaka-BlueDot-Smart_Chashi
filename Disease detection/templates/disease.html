@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ _('disease_detection') }} - {{ app_name }}</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #557A46, #8FBC46);
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+        }
+        .disease-container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .upload-section {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+        .crop-selector {
+            background: #f8f9fa;
+            border: 2px solid #557A46;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .crop-selector h4 {
+            margin: 0 0 1rem 0;
+            color: #557A46;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .crop-selector select, .crop-selector input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: #fff;
+        }
+        .tips-box {
+            background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid #4caf50;
+        }
+        .tips-box h4 {
+            margin: 0 0 1rem 0;
+            color: #2e7d32;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .tips-box ul {
+            margin: 0;
+            padding-left: 1.2rem;
+            color: #333;
+        }
+        .tips-box li {
+            margin-bottom: 0.5rem;
+        }
+        .drag-drop-zone {
+            border: 3px dashed #557A46;
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .drag-drop-zone:hover, .drag-drop-zone.dragover {
+            background: #e8f5e9;
+            border-color: #8FBC46;
+            transform: scale(1.01);
+        }
+        .drag-drop-zone .upload-icon {
+            font-size: 4rem;
+            color: #557A46;
+            margin-bottom: 1rem;
+        }
+        .drag-drop-zone h3 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        .drag-drop-zone p {
+            color: #666;
+            margin: 0.25rem 0;
+        }
+        .file-input {
+            display: none;
+        }
+        .image-preview {
+            display: none;
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+        .image-preview img {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .preview-actions {
+            margin-top: 1rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #557A46, #8FBC46);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(85, 122, 70, 0.4);
+        }
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        .analyzing-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        .analyzing-overlay.active {
+            display: flex;
+        }
+        .analyzing-content {
+            background: white;
+            padding: 3rem;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 400px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #557A46;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .result-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-top: 2rem;
+            display: none;
+        }
+        .result-card.show {
+            display: block;
+            animation: slideIn 0.5s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .disease-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #eee;
+        }
+        .disease-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 0;
+        }
+        .confidence-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+        .confidence-high { background: #d4edda; color: #155724; }
+        .confidence-medium { background: #fff3cd; color: #856404; }
+        .confidence-low { background: #f8d7da; color: #721c24; }
+        .severity-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .severity-high { background: #dc3545; color: white; }
+        .severity-medium { background: #ffc107; color: #333; }
+        .severity-low { background: #28a745; color: white; }
+        .info-section {
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .info-section h3 {
+            color: #557A46;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+        }
+        .info-section p {
+            margin: 0;
+            color: #444;
+            line-height: 1.6;
+        }
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-warning { background: #fff3cd; color: #856404; }
+        .alert-danger { background: #f8d7da; color: #721c24; }
+        .alert-info { background: #d1ecf1; color: #0c5460; }
+        #alertContainer {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 10000;
+            max-width: 400px;
+        }
+        .language-switch {
+            position: absolute;
+            right: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .language-switch select {
+            padding: 0.5rem;
+            border-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.2);
+            color: white;
+            cursor: pointer;
+        }
+        .header-inner {
+            position: relative;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-inner">
+            <h1>
+                <span class="material-icons">eco</span>
+                {{ app_name }}
+            </h1>
+            <div class="language-switch">
+                <select id="langSelect" onchange="changeLanguage(this.value)">
+                    <option value="en" {% if lang == 'en' %}selected{% endif %}>English</option>
+                    <option value="bn" {% if lang == 'bn' %}selected{% endif %}>বাংলা</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <div id="alertContainer"></div>
+
+    <div class="disease-container">
+        <div class="upload-section">
+            <h2 class="section-title">
+                <span class="material-icons">photo_camera</span>
+                {{ _('upload_crop_image') }}
+            </h2>
+            <p style="color: #666; margin-bottom: 1.5rem;">
+                {{ _('detect_crop_diseases') }}
+            </p>
+            
+            <!-- Crop Selector -->
+            <div class="crop-selector">
+                <h4>
+                    <span class="material-icons">eco</span>
+                    {{ _('select_crop') }}
+                </h4>
+                <p style="color: #666; margin-bottom: 1rem; font-size: 0.9rem;">
+                    {{ _('select_crop_desc') }}
+                </p>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                            {{ _('crop_type') }}
+                        </label>
+                        <select id="cropSelect">
+                            <option value="">{{ _('select_a_crop') }}</option>
+                            <optgroup label="{{ _('bangladesh_crops') }}">
+                                {% for value, name_bn in crops.bangladesh %}
+                                <option value="{{ value }}">{% if lang == 'bn' %}{{ name_bn }} ({{ value }}){% else %}{{ value }}{% endif %}</option>
+                                {% endfor %}
+                            </optgroup>
+                            <optgroup label="{{ _('common_crops') }}">
+                                {% for value, name_bn in crops.common %}
+                                <option value="{{ value }}">{% if lang == 'bn' %}{{ name_bn }} ({{ value }}){% else %}{{ value }}{% endif %}</option>
+                                {% endfor %}
+                            </optgroup>
+                            <option value="other">{{ _('other_type') }}</option>
+                        </select>
+                    </div>
+                    <div id="customCropInput" style="flex: 1; min-width: 200px; display: none;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                            {{ _('enter_crop_name') }}
+                        </label>
+                        <input type="text" id="customCrop" placeholder="{% if lang == 'bn' %}যেমন: Wheat, Banana...{% else %}e.g., Wheat, Banana...{% endif %}">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tips Box -->
+            <div class="tips-box">
+                <h4>
+                    <span class="material-icons">tips_and_updates</span>
+                    {{ _('tips_title') }}
+                </h4>
+                <ul>
+                    <li>{{ _('tip_1') | safe }}</li>
+                    <li>{{ _('tip_2') | safe }}</li>
+                    <li>{{ _('tip_3') | safe }}</li>
+                    <li>{{ _('tip_4') | safe }}</li>
+                </ul>
+            </div>
+            
+            <!-- Drag & Drop Zone -->
+            <div class="drag-drop-zone" id="dropZone">
+                <span class="material-icons upload-icon">cloud_upload</span>
+                <h3>{{ _('drag_drop_image') }}</h3>
+                <p>{{ _('or_click_to_browse') }}</p>
+                <p style="font-size: 0.9rem; color: #888; margin-top: 1rem;">
+                    {{ _('jpg_png_max') }}
+                </p>
+                <input type="file" id="diseaseImage" class="file-input" accept="image/*">
+            </div>
+            
+            <!-- Image Preview -->
+            <div class="image-preview" id="imagePreview">
+                <img id="previewImg" src="" alt="Preview">
+                <div class="preview-actions">
+                    <button type="button" class="btn btn-primary" id="analyzeBtn">
+                        <span class="material-icons">biotech</span>
+                        {{ _('analyze_image') }}
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">
+                        <span class="material-icons">close</span>
+                        {{ _('cancel') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Results Section -->
+        <div class="result-card" id="resultCard"></div>
+    </div>
+
+    <!-- Analyzing Overlay -->
+    <div class="analyzing-overlay" id="analyzingOverlay">
+        <div class="analyzing-content">
+            <div class="spinner"></div>
+            <h3>{{ _('analyzing_image') }}</h3>
+            <p>{{ _('please_wait') }}</p>
+        </div>
+    </div>
+
+    <script>
+    const currentLang = '{{ lang }}';
+    const translations = {
+        crop: '{{ _("crop") }}',
+        symptoms: '{{ _("symptoms") }}',
+        treatment: '{{ _("treatment") }}',
+        organic_treatment: '{{ _("organic_treatment") }}',
+        prevention: '{{ _("prevention") }}',
+        healthy_plant: '{{ _("healthy_plant") }}',
+        not_crop_title: '{{ _("not_crop_title") }}',
+        not_crop_desc: '{{ _("not_crop_desc") }}'
+    };
+    
+    // Simple alert system
+    function showAlert(message, type = 'info') {
+        const container = document.getElementById('alertContainer');
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type}`;
+        const icons = {
+            success: 'check_circle',
+            danger: 'error',
+            warning: 'warning',
+            info: 'info'
+        };
+        alert.innerHTML = `
+            <span class="material-icons">${icons[type] || 'info'}</span>
+            <span>${escapeHtml(message)}</span>
+        `;
+        container.appendChild(alert);
+        setTimeout(() => alert.remove(), 5000);
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function changeLanguage(lang) {
+        window.location.href = `/set-language/${lang}`;
+    }
+
+    (function() {
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('diseaseImage');
+        const imagePreview = document.getElementById('imagePreview');
+        const previewImg = document.getElementById('previewImg');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const analyzingOverlay = document.getElementById('analyzingOverlay');
+        const resultCard = document.getElementById('resultCard');
+        const cropSelect = document.getElementById('cropSelect');
+        const customCropInput = document.getElementById('customCropInput');
+        const customCrop = document.getElementById('customCrop');
+        
+        let selectedFile = null;
+        
+        // Crop selector
+        cropSelect.addEventListener('change', function() {
+            if (this.value === 'other') {
+                customCropInput.style.display = 'block';
+                customCrop.focus();
+            } else {
+                customCropInput.style.display = 'none';
+                customCrop.value = '';
+            }
+        });
+        
+        function getSelectedCrop() {
+            return cropSelect.value === 'other' ? customCrop.value.trim() : cropSelect.value;
+        }
+        
+        // Click to browse
+        dropZone.addEventListener('click', () => fileInput.click());
+        
+        // Drag and drop
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) handleFile(e.target.files[0]);
+        });
+        
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                showAlert('Please select an image file', 'danger');
+                return;
+            }
+            if (file.size > 10 * 1024 * 1024) {
+                showAlert('File size must be less than 10MB', 'danger');
+                return;
+            }
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                imagePreview.style.display = 'block';
+                dropZone.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        cancelBtn.addEventListener('click', () => {
+            selectedFile = null;
+            fileInput.value = '';
+            imagePreview.style.display = 'none';
+            dropZone.style.display = 'block';
+            resultCard.classList.remove('show');
+        });
+        
+        analyzeBtn.addEventListener('click', () => {
+            if (!selectedFile) {
+                showAlert('Please select an image first', 'danger');
+                return;
+            }
+            const crop = getSelectedCrop();
+            if (!crop) {
+                showAlert(currentLang === 'bn' ? 'অনুগ্রহ করে প্রথমে ফসল নির্বাচন করুন' : 'Please select a crop first', 'warning');
+                cropSelect.focus();
+                return;
+            }
+            analyzeImage();
+        });
+        
+        function analyzeImage() {
+            const formData = new FormData();
+            formData.append('image', selectedFile);
+            formData.append('crop', getSelectedCrop());
+            
+            analyzingOverlay.classList.add('active');
+            
+           fetch('/api/analyze', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                // Parse JSON regardless of status code
+                return response.json().then(data => ({
+                    ok: response.ok,
+                    status: response.status,
+                    data: data
+                }));
+            })
+            .then(result => {
+                analyzingOverlay.classList.remove('active');
+                const response = result.data;
+                
+                if (response.success) {
+                    displayResults(response.data);
+                    if (response.data.is_healthy) {
+                        showAlert('Great news! Your plant appears healthy.', 'success');
+                    } else if (response.data.is_uncertain) {
+                        showAlert('Detection uncertain. Please try a clearer image.', 'warning');
+                    } else {
+                        showAlert('Disease detected. See recommendations below.', 'info');
+                    }
+                } else {
+                    if (response.error_code === 'NOT_CROP') {
+                        showNotCropError(response);
+                    } else {
+                        showAlert(response.message || 'Analysis failed', 'danger');
+                    }
+                }
+            })
+            .catch(error => {
+                analyzingOverlay.classList.remove('active');
+                showAlert('Error analyzing image. Please try again.', 'danger');
+                console.error('Analysis error:', error);
+            });
+        }
+        
+        function showNotCropError(response) {
+            const title = translations.not_crop_title;
+            const desc = translations.not_crop_desc;
+            
+            resultCard.innerHTML = `
+                <div style="text-align: center; padding: 2rem;">
+                    <span class="material-icons" style="font-size: 4rem; color: #dc3545;">report_problem</span>
+                    <h2 style="color: #dc3545; margin: 1rem 0;">${escapeHtml(title)}</h2>
+                    <p style="color: #666; font-size: 1.1rem;">${escapeHtml(desc)}</p>
+                </div>
+            `;
+            resultCard.classList.add('show');
+        }
+        
+        function displayResults(data) {
+            const confidence = parseFloat(data.confidence);
+            let confidenceClass = confidence >= 80 ? 'high' : (confidence >= 60 ? 'medium' : 'low');
+            const isHealthy = data.is_healthy || false;
+            const isUncertain = data.is_uncertain || confidence < 50;
+            
+            let statusIcon = isHealthy ? 'check_circle' : (isUncertain ? 'help_outline' : 'bug_report');
+            let statusColor = isHealthy ? '#4caf50' : (isUncertain ? '#ff9800' : '#f44336');
+            
+            const html = `
+                ${data.warning ? `
+                <div class="alert alert-warning">
+                    <span class="material-icons">warning</span>
+                    <span>${escapeHtml(data.warning)}</span>
+                </div>
+                ` : ''}
+                
+                ${isHealthy ? `
+                <div style="background: linear-gradient(135deg, #4caf50, #8bc34a); color: white; padding: 2rem; border-radius: 12px; text-align: center; margin-bottom: 1.5rem;">
+                    <span class="material-icons" style="font-size: 3rem;">eco</span>
+                    <h2 style="margin: 0.5rem 0;">${translations.healthy_plant}</h2>
+                </div>
+                ` : ''}
+                
+                <div class="disease-header">
+                    <div>
+                        <p style="color: #666; margin: 0 0 0.5rem 0;">${translations.crop}: <strong>${escapeHtml(data.crop || 'Unknown')}</strong></p>
+                        <h2 class="disease-name" style="color: ${statusColor};">
+                            <span class="material-icons" style="vertical-align: middle;">${statusIcon}</span>
+                            ${currentLang === 'bn' && data.disease_name_bn ? escapeHtml(data.disease_name_bn) : escapeHtml(data.disease_name || 'Unknown')}
+                        </h2>
+                    </div>
+                    <div style="text-align: right;">
+                        <div class="confidence-badge confidence-${confidenceClass}">
+                            <span class="material-icons">${isUncertain ? 'help_outline' : 'verified'}</span>
+                            ${confidence.toFixed(1)}%
+                        </div>
+                        <div style="margin-top: 0.5rem;">
+                            <span class="severity-badge severity-${data.severity || 'low'}">${(data.severity || 'unknown').toUpperCase()}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                ${data.symptoms ? `
+                <div class="info-section">
+                    <h3><span class="material-icons">warning</span> ${translations.symptoms}</h3>
+                    <p>${escapeHtml(currentLang === 'bn' && data.symptoms_bn ? data.symptoms_bn : data.symptoms)}</p>
+                </div>
+                ` : ''}
+                
+                ${data.treatment ? `
+                <div class="info-section">
+                    <h3><span class="material-icons">medical_services</span> ${translations.treatment}</h3>
+                    <p>${escapeHtml(currentLang === 'bn' && data.treatment_bn ? data.treatment_bn : data.treatment)}</p>
+                </div>
+                ` : ''}
+                
+                ${data.organic_treatment ? `
+                <div class="info-section">
+                    <h3><span class="material-icons">eco</span> ${translations.organic_treatment}</h3>
+                    <p>${escapeHtml(currentLang === 'bn' && data.organic_treatment_bn ? data.organic_treatment_bn : data.organic_treatment)}</p>
+                </div>
+                ` : ''}
+                
+                ${data.prevention ? `
+                <div class="info-section">
+                    <h3><span class="material-icons">shield</span> ${translations.prevention}</h3>
+                    <p>${escapeHtml(currentLang === 'bn' && data.prevention_bn ? data.prevention_bn : data.prevention)}</p>
+                </div>
+                ` : ''}
+                
+                <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #eee; text-align: center; color: #888; font-size: 0.9rem;">
+                    <span class="material-icons" style="vertical-align: middle; font-size: 1rem;">schedule</span>
+                    Detected on ${new Date(data.detected_at).toLocaleString()}
+                </div>
+            `;
+            
+            resultCard.innerHTML = html;
+            resultCard.classList.add('show');
+            resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    })();
+   
+   
+   
+   </script>
+</body>
+</html>
