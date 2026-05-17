@@ -1,0 +1,22 @@
+{
+    "total_users": "1",
+    "users_by_role": [
+        {
+            "role": "farmer",
+            "count": "1"
+        }
+    ],
+    "recent_users": [
+        {
+            "user_id": "76",
+            "first_name": "tibetoc366@hidevak.com",
+            "last_name": "",
+            "email": "tibetoc366@hidevak.com",
+            "role": "farmer",
+            "created_at": "2026-05-16 10:42:27"
+        }
+    ],
+    "date_from": "2026-04-16",
+    "date_to": "2026-05-16",
+    "generated_at": "2026-05-16 17:38:06"
+}

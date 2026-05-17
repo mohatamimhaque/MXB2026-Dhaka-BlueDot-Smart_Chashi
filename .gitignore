@@ -19,9 +19,6 @@ php_errors.log
 # Keep directory structure (.gitkeep files) but not uploaded files
 
 
-# ── Generated Reports ────────────────────────────────────────────
-reports/*
-!reports/.gitkeep
 
 # ── Python — Virtual Environment ─────────────────────────────────
 Disease detection/venv/
@@ -44,21 +41,6 @@ __pycache__/
 # If you want to strip output: use nbstripout
 # .ipynb_checkpoints/
 
-# ── ML Model Weights (large binary files) ────────────────────────
-# These are 18–327 MB — use Git LFS or host separately
-Disease detection/backend/models/*.pth
-Disease detection/backend/models/*.h5
-Disease detection/backend/models/*.pb
-Disease detection/backend/models/*.onnx
-Disease detection/simple-plant-detection/model.safetensors
-Disease detection/simple-plant-detection/onnx/model.onnx
-Disease detection/simple-plant-detection/training_args.bin
-
-# Keep config/metadata (small text files — needed to load model)
-!Disease detection/simple-plant-detection/config.json
-!Disease detection/simple-plant-detection/preprocessor_config.json
-!Disease detection/backend/models/class_names.json
-!Disease detection/backend/models/class_names_merged.json
 
 # ── Disease Detection — Uploaded Images ──────────────────────────
 Disease detection/static/uploads/*
