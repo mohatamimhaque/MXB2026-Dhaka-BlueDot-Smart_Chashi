@@ -1079,7 +1079,7 @@ function formatMarkdownToHtml(string $text): string {
 
     // Paragraphs
     $text = preg_replace('/\n{2,}/', '</p><p>', $text);
-    $text = str_replace("\n", '<br>', $text);
+    // $text = str_replace("\n", '<br>', $text);
     $text = '<p>' . $text . '</p>';
 
     // Clean up empty tags and wrongly-wrapped block elements
