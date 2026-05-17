@@ -1,6 +1,8 @@
+
+
 FROM php:8.2-apache
 
-# Enable Apache rewrite (optional but useful)
+# Enable rewrite module only
 RUN a2enmod rewrite
 
 # Copy project files
