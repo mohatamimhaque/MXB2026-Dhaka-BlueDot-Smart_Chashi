@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: smart-chashi
+    runtime: docker
+    # ML models (PyTorch EfficientNet + ViT) need at least 1 GB RAM.
+    # Free tier (512 MB) will OOM on model load — use Starter or Standard plan.
+    plan: starter
+    autoDeploy: true

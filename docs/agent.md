@@ -1,6 +1,6 @@
 # Chashi Bhai AI Agent — Technical Documentation
 
-> **Version:** 3.0 | **Last updated:** 2026-05-17
+> **Version:** 3.0 | **Last updated:** 2026-05-18
 > **Base URL:** `/agent/chat` | **API root:** `/agent/api/`
 
 ---
@@ -27,6 +27,9 @@
 18. [Security & Rate Limiting](#18-security--rate-limiting)
 19. [Error Handling](#19-error-handling)
 20. [Keyboard Shortcuts](#20-keyboard-shortcuts)
+- [Appendix A: Request Flow Diagram](#appendix-a-request-flow-diagram)
+- [Appendix B: Markdown Rendering](#appendix-b-markdown-rendering)
+- [Appendix C: Disease Detection Service](#appendix-c-disease-detection-service)
 
 ---
 
@@ -87,8 +90,8 @@ As of v3, the backend runs a **dual-path architecture**: image submissions and t
               ▼             ▼                  ▼              ▼
         ┌──────────┐  ┌──────────┐    ┌──────────────┐  ┌──────────┐
         │ MySQL DB │  │ AI Provider│  │ Disease API  │  │ Railway  │
-        │ Messages │  │ (dynamic) │  │ (multipart   │  │ Fallback │
-        │ Memory   │  │ Groq/etc  │  │  POST)       │  └──────────┘
+        │ Messages │  │ (dynamic) │  │ Flask/Python │  │ Fallback │
+        │ Memory   │  │ Groq/etc  │  │ :8080        │  └──────────┘
         │ Convos   │  └──────────┘   └──────────────┘
         │ Uploads  │
         └──────────┘
@@ -144,7 +147,8 @@ POST /agent/api/send.php  {images: [...], message: "optional"}
         │
         ▼
 ③ Disease Detection API call (one per image, sequential)
-   ├─ Sends multipart POST: image file + crop="" field
+   ├─ Endpoint: POST {disease_detection_api_url}/api/analyze  (multipart form)
+   ├─ Fields: image file + crop="" field
    │    (same API as pages/disease.php — uses $SYSTEM_SETTINGS['disease_detection_api_url'])
    ├─ HTTP 200 + success:true → extract structured analysis
    ├─ HTTP 200 + error_code:"NOT_CROP" → 400 IMAGE_NOT_CROP (user-facing error, reject)
@@ -320,7 +324,7 @@ After path-specific processing, both paths converge here:
 
 | Layer | Source | Trigger | Injected as |
 |-------|--------|---------|-------------|
-| Disease Detection API | External REST API (admin-configured) | Every image | Structured analysis block |
+| Disease Detection API | Local Flask service (`http://localhost:8080/api/analyze`) | Every image | Structured analysis block |
 | RAG Knowledge Base | Built-in PHP array | `image_with_text` only | Relevant domain block |
 | User memory | agent_user_memory DB table | Every request | Profile block |
 
@@ -762,6 +766,18 @@ providers/                      # Shared AI provider drivers (project root)
 ├── OpenAIProvider.php
 └── BaseProvider.php
 
+disease-detection/              # Standalone Python ML service (port 8080)
+├── app.py                      # Flask entry point
+├── run.bat                     # Windows launcher (auto-venv + auto-install)
+├── requirements.txt            # flask, torch, Pillow, transformers, numpy
+├── venv/                       # Auto-created virtual environment
+├── backend/
+│   └── models/
+│       ├── class_names.json
+│       └── class_names_merged.json
+└── static/
+    └── uploads/disease_images/
+
 docs/
 └── agent.md                    # This file
 ```
@@ -780,7 +796,7 @@ docs/
 | `admin_settings` DB | `ai_api_key_{provider}` | Per-provider API key |
 | `admin_settings` DB | `ai_temperature` | Sampling temperature (default 0.7) |
 | `admin_settings` DB | `ai_max_tokens` | Max response tokens (default 1200) |
-| `system_settings` DB | `disease_detection_api_url` | Disease Detection API endpoint |
+| `system_settings` DB | `disease_detection_api_url` | Disease Detection API base URL (default: `http://localhost:8080`) |
 | `system_settings` DB | `agent_api_url` | Railway fallback endpoint |
 
 ### AI Model Usage
@@ -994,6 +1010,61 @@ DB write fails (saveMessages)
 | Blank line | `</p><p>` |
 
 Code blocks are extracted before other rules run (placeholder substitution) to prevent their content from being processed as markdown.
+
+---
+
+---
+
+## Appendix C: Disease Detection Service
+
+The Disease Detection service is a separate Python/Flask application that runs alongside the PHP backend. It handles all ML inference for plant/crop image analysis.
+
+### Service Details
+
+| Property | Value |
+|----------|-------|
+| Port | `8080` |
+| Base URL | `http://localhost:8080` |
+| Entry point | `disease-detection/app.py` |
+| Launcher (Windows) | `disease-detection/run.bat` |
+
+### Exposed Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/detect` | POST | Plant detection (primary image classification) |
+| `/api/analyze` | POST | Disease analysis — called by `send.php` (multipart: `image` + `crop`) |
+| `/health` | GET | Health check — returns service status |
+
+### Technology Stack
+
+| Package | Role |
+|---------|------|
+| Flask | HTTP server |
+| PyTorch (`torch`) | ML model inference |
+| Pillow (`PIL`) | Image decoding and preprocessing |
+| Transformers (HuggingFace) | Model loading |
+| NumPy | Tensor/array utilities |
+
+### Setup & Launch (Windows)
+
+`run.bat` automates the full setup in 4 steps:
+
+1. **Python check** — requires Python 3.10+ in `PATH`
+2. **Virtual environment** — creates `disease-detection/venv/` if not present
+3. **Dependency install** — installs from `requirements.txt` if any package is missing (first run: 3–10 minutes)
+4. **Start** — runs `app.py`; opens `http://localhost:8080` in browser
+
+```bat
+cd disease-detection
+run.bat
+```
+
+To stop: press `Ctrl+C` in the console window.
+
+### Integration with PHP
+
+`send.php` reads `$SYSTEM_SETTINGS['disease_detection_api_url']` and POSTs to `{url}/api/analyze` as multipart form data. Set this value in the admin panel to the service base URL (e.g. `http://localhost:8080`). If the URL is empty or the service is unreachable, the agent falls back to asking the user to describe symptoms rather than returning an error.
 
 ---
 

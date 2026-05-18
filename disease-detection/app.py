@@ -12,7 +12,6 @@ Combines:
 import os
 import sys
 import io
-import uuid
 import logging
 from datetime import datetime
 from typing import Dict, Any, Optional
@@ -21,7 +20,6 @@ import numpy as np
 from PIL import Image
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, make_response
 from flask_cors import CORS
-from werkzeug.utils import secure_filename
 
 # Add backend to path for imports
 BACKEND_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend')
@@ -30,6 +28,73 @@ sys.path.insert(0, BACKEND_DIR)
 # Import ML classifiers from backend
 from crop_classifier import CropClassifier
 from disease_classifier import DiseaseClassifier
+
+# ========================================
+# Plant Types (simple-plant-detection model)
+# ========================================
+
+PLANT_TYPES = [
+    "guava", "galangal", "bilimbi", "paddy", "eggplant", "cucumber",
+    "cassava", "papaya", "banana", "orange", "cantaloupe", "coconut",
+    "soybeans", "pomelo", "pineapple", "melon", "shallot", "peperchili",
+    "spinach", "tobacco", "aloevera", "curcuma", "corn", "ginger",
+    "sweetpotatoes", "kale", "longbeans", "watermelon", "mango", "waterapple"
+]
+
+PLANT_MODEL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'simple-plant-detection')
+PLANT_CONFIDENCE_THRESHOLD = 50.0
+
+
+class PlantClassifier:
+    """Plant classification using the simple-plant-detection ViT model"""
+
+    def __init__(self, model_path: str):
+        self.model_path = model_path
+        self.model = None
+        self.processor = None
+        self.device = None
+        self._load_model()
+
+    def _load_model(self):
+        import torch
+        from transformers import ViTForImageClassification, ViTImageProcessor
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.model = ViTForImageClassification.from_pretrained(self.model_path)
+        self.processor = ViTImageProcessor.from_pretrained(self.model_path)
+        self.model.to(self.device)
+        self.model.eval()
+        logger.info(f"PlantClassifier loaded on {self.device}")
+
+    def classify(self, image: Image.Image) -> Dict[str, Any]:
+        try:
+            import torch
+            if image.mode != 'RGB':
+                image = image.convert('RGB')
+            inputs = self.processor(images=image, return_tensors="pt")
+            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+            with torch.no_grad():
+                outputs = self.model(**inputs)
+                probs = torch.nn.functional.softmax(outputs.logits, dim=-1)
+            probs_np = probs.cpu().numpy()[0]
+            top_indices = np.argsort(probs_np)[::-1][:3]
+            top_predictions = [
+                {"plant_type": PLANT_TYPES[i], "confidence": round(float(probs_np[i]) * 100, 2)}
+                for i in top_indices
+            ]
+            best_idx = top_indices[0]
+            best_confidence = float(probs_np[best_idx]) * 100
+            is_plant = best_confidence >= PLANT_CONFIDENCE_THRESHOLD
+            return {
+                "is_plant": is_plant,
+                "confidence": round(best_confidence, 2),
+                "plant_type": PLANT_TYPES[best_idx] if is_plant else None,
+                "top_predictions": top_predictions,
+                "status": "success"
+            }
+        except Exception as e:
+            logger.error(f"PlantClassifier error: {e}")
+            return {"is_plant": False, "confidence": 0, "plant_type": None,
+                    "top_predictions": [], "status": "error", "error": str(e)}
 
 # Configure logging
 logging.basicConfig(
@@ -50,7 +115,6 @@ CORS(app)
 APP_NAME = "Smart Chashi - AI Disease Detection"
 APP_VERSION = "2.0.0"
 DEFAULT_LANGUAGE = "en"
-UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads', 'disease_images')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'bmp'}
 MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10MB
 
@@ -60,10 +124,6 @@ DISEASE_CONFIDENCE_THRESHOLD = 60.0
 MIN_IMAGE_SIZE = 50
 MAX_IMAGE_SIZE = 4096
 
-# Ensure upload folder exists
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 
 # ========================================
@@ -72,6 +132,7 @@ app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 
 _crop_classifier: Optional[CropClassifier] = None
 _disease_classifier: Optional[DiseaseClassifier] = None
+_plant_classifier: Optional[PlantClassifier] = None
 
 
 def get_crop_classifier() -> CropClassifier:
@@ -90,6 +151,15 @@ def get_disease_classifier() -> DiseaseClassifier:
         logger.info("Initializing Disease Classifier...")
         _disease_classifier = DiseaseClassifier()
     return _disease_classifier
+
+
+def get_plant_classifier() -> PlantClassifier:
+    """Lazy load plant classifier"""
+    global _plant_classifier
+    if _plant_classifier is None:
+        logger.info("Initializing Plant Classifier...")
+        _plant_classifier = PlantClassifier(PLANT_MODEL_PATH)
+    return _plant_classifier
 
 
 # ========================================
@@ -458,19 +528,7 @@ def analyze_disease():
         }), 400
     
     image = validation["image"]
-    
-    # Save file
-    file_ext = file.filename.rsplit('.', 1)[1].lower()
-    unique_filename = f"disease_{uuid.uuid4().hex}.{file_ext}"
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-    
-    try:
-        image.save(filepath)
-    except Exception as e:
-        logger.error(f"Failed to save file: {e}")
-    
-    relative_url = f'/static/uploads/disease_images/{unique_filename}'
-    
+
     # Get crop parameter
     selected_crop = request.form.get('crop', '').strip()
     
@@ -485,9 +543,8 @@ def analyze_disease():
                 'error_code': 'NOT_CROP',
                 'message': result.get('message', 'This image does not appear to be a crop or plant'),
                 'message_bn': result.get('message_bn', 'এই ছবিটি ফসল বা উদ্ভিদের মতো দেখাচ্ছে না'),
-                'image_url': relative_url
             }), 400
-        
+
         # Handle other errors
         if result.get("status") == "error":
             return jsonify({
@@ -495,9 +552,8 @@ def analyze_disease():
                 'status': 'error',
                 'message': result.get('message', 'Detection failed'),
                 'error_code': result.get('error_code', 'DETECTION_ERROR'),
-                'image_url': relative_url
             }), 500
-        
+
         # Success response
         response_data = {
             'crop': result.get('crop'),
@@ -507,7 +563,6 @@ def analyze_disease():
             'severity': 'high' if result.get('confidence', 0) >= 80 else ('medium' if result.get('confidence', 0) >= 60 else 'low'),
             'is_healthy': result.get('is_healthy', False),
             'is_uncertain': result.get('is_uncertain', False),
-            'image_url': relative_url,
             'symptoms': result.get('symptoms'),
             'symptoms_bn': result.get('symptoms_bn'),
             'treatment': result.get('solution', {}).get('chemical'),
@@ -546,8 +601,81 @@ def analyze_disease():
             'status': 'error',
             'message': str(e),
             'error_code': 'DETECTION_ERROR',
-            'image_url': relative_url
         }), 500
+
+
+# ========================================
+# Plant Detection API Routes (merged from plant_detection_api.py)
+# ========================================
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    """Health check — compatible with the old ML backend"""
+    return jsonify({
+        "status": "healthy",
+        "service": APP_NAME,
+        "version": APP_VERSION,
+        "timestamp": datetime.now().isoformat()
+    })
+
+
+@app.route('/info', methods=['GET'])
+def plant_api_info():
+    """Plant detection API info"""
+    return jsonify({
+        "service": "Simple Plant Detection API",
+        "version": "1.0.0",
+        "supported_plants": PLANT_TYPES,
+        "confidence_threshold": PLANT_CONFIDENCE_THRESHOLD,
+        "max_file_size_mb": MAX_CONTENT_LENGTH // (1024 * 1024)
+    })
+
+
+@app.route('/detect', methods=['POST'])
+def detect_plant():
+    """Detect if an uploaded image is a plant/crop (plant_detection_api compatible)"""
+    if 'image' not in request.files and 'file' not in request.files:
+        return jsonify({'success': False, 'error': 'No image file uploaded. Use "image" or "file".', 'classification': None}), 400
+
+    file = request.files.get('image') or request.files.get('file')
+
+    if file.filename == '':
+        return jsonify({'success': False, 'error': 'No file selected', 'classification': None}), 400
+
+    if not allowed_file(file.filename):
+        return jsonify({'success': False, 'error': f'Invalid file type. Allowed: {", ".join(ALLOWED_EXTENSIONS)}', 'classification': None}), 400
+
+    validation = validate_image(file)
+    if not validation["valid"]:
+        return jsonify({'success': False, 'error': validation["error"], 'classification': None}), 400
+
+    try:
+        start_time = datetime.now()
+        result = get_plant_classifier().classify(validation["image"])
+        processing_time = (datetime.now() - start_time).total_seconds() * 1000
+
+        if result["status"] == "error":
+            return jsonify({'success': False, 'error': result.get("error", "Classification failed"), 'classification': None}), 500
+
+        is_plant = result["is_plant"]
+        classification = "crop/plant" if is_plant else "other"
+        response = {
+            'success': True,
+            'is_plant': is_plant,
+            'classification': classification,
+            'confidence': result["confidence"],
+            'top_predictions': result["top_predictions"],
+            'processing_time_ms': round(processing_time, 2),
+            'message': f"Detected plant: {result['plant_type'].title()} with {result['confidence']}% confidence"
+                       if is_plant else f"Classified as: OTHER"
+        }
+        if is_plant:
+            response['plant_type'] = result["plant_type"]
+        return jsonify(response)
+
+    except Exception as e:
+        logger.error(f"Detection error: {e}")
+        return jsonify({'success': False, 'error': str(e), 'classification': None}), 500
 
 
 # ========================================
@@ -579,4 +707,6 @@ if __name__ == '__main__':
     ╚════════════════════════════════════════════════════════════╝
     """)
     
-    app.run(host='0.0.0.0', port=8080, debug=True, use_reloader=True, reloader_type='stat')
+    port = int(os.environ.get('PORT', 8080))
+    debug = os.environ.get('FLASK_ENV') == 'development'
+    app.run(host='0.0.0.0', port=port, debug=debug)
