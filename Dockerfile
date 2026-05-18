@@ -1,14 +1,11 @@
+FROM python:3.10
 
+WORKDIR /app
 
-FROM php:8.2-apache
+COPY MXB2026-Dhaka-BlueDot-Smart_Chashi/disease-detection/ .
 
-# Enable rewrite module only
-RUN a2enmod rewrite
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project files
-COPY . /var/www/html/
+EXPOSE 7860
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html
-
-EXPOSE 80
+CMD ["python", "app.py"]
