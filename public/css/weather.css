@@ -1913,7 +1913,7 @@ img {
         flex-direction: column !important;
         width: 300px !important;
         right: -100% !important;
-        display: none;
+        display: none !important;
     }
      .navbar-nav.show{
         display: flex;

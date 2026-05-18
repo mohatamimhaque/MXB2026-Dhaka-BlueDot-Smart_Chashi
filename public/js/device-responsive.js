@@ -129,7 +129,6 @@
         // Insert at the end of head for proper cascade
         document.head.appendChild(link);
 
-        console.log('[DeviceResponsive] Loaded CSS:', CONFIG.cssPath + filename);
     }
 
     /**
@@ -223,9 +222,7 @@
         }
         loadDeviceCSS(deviceType);
 
-        // Log for debugging
-        console.log('[DeviceResponsive] Initialized:', window.DEVICE_INFO);
-        console.log('[DeviceResponsive] CSS Path:', CONFIG.cssPath);
+
     }
 
     /**

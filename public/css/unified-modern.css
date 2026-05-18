@@ -2705,7 +2705,7 @@ textarea:focus,
     flex: 1 1 0% !important;
     min-width: 0 !important;
     /* Clip overflowing nav items inside the list; JS moves extras to More */
-    display: flex !important;
+    /* display: flex !important; */
     flex-wrap: nowrap !important;
     align-items: center !important;
 }

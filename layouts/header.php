@@ -440,7 +440,6 @@
                         dd.classList.remove('open');
                     } else {
                         const rect = this.getBoundingClientRect();
-                        console.log(parseInt(rect.left));
                         dd.classList.add('open');
                     }
                 });
@@ -513,18 +512,25 @@
 
 
         function checkWindowSize(){
-            if(window.innerWidth<=1024){
+            
+            if(document.body.clientWidth<1024){
                 document.querySelectorAll(".nav-item").forEach(item => {
                     item.style.display = "flex";
                     item.removeAttribute("data-moved");
-                    console.log(item);
                 });
 
-                document.getElementById("navMoreItem").style.display = "none";
+
+                let navMoreItem = document.getElementById("navMoreItem");
+
+                if (navMoreItem) {
+                    navMoreItem.style.display = "none";
+                }
+
                 return;
             };
 
             checkNavOverflow();
+
         }
 
 
